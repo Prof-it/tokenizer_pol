@@ -224,7 +224,7 @@ def process_raw_files():
 
 
 def data_pipeline():
-    # download_raw_files()
+    download_raw_files()
     process_raw_files()
     print('\nDone.')
 
