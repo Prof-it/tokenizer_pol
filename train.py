@@ -1,26 +1,28 @@
 import os
 import torch
 from torch.utils.data import DataLoader
+from huggingface_hub import snapshot_download
 
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, LearningRateMonitor
 
-from config import ModelConfig, TrainingCongig
+from config import ModelConfig, TrainingConfig
 from lightning_lm import LMTraining
 from utils import *
+from build_dataset import data_pipeline
 
 
 def train():
     args = parse_args()
 
     model_config = ModelConfig()
-    training_config = TrainingCongig()
+    training_config = TrainingConfig()
 
     torch.set_float32_matmul_precision('medium')
 
     # Setup dataset and dataloader
-    dataset = WikiDataset(args.data_path)
+    dataset = CorpusDataset(args.data_path)
 
     # Split data 4:1
     train_data, val_data = train_test_split(dataset, train_size=0.8)
@@ -102,8 +104,5 @@ def train():
 
 
 if __name__ == "__main__":
-    # 1. download and process data
-    # 2. download pl tokenizer from hf
-    # 3. download and train spm
-    # 4. tokenize datasets?
+    os.makedirs("data/model_training", exist_ok=True)
     train()
