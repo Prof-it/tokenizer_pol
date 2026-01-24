@@ -49,6 +49,9 @@ DATA_PATHS = {
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Polish Language Model')
 
+    # For starting the proces from scratch
+    parser.add_argument('--start_fresh', type=bool, default=False, help='Start fresh process - download and process data')
+
     # Data mode
     parser.add_argument('--mode', type=str, choices=['spm', 'pl'], default='pl', help='Tokenizer mode: spm or pl')
 

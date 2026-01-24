@@ -227,5 +227,3 @@ def data_pipeline():
     download_raw_files()
     process_raw_files()
     print('\nDone.')
-
-data_pipeline()

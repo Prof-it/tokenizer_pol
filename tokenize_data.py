@@ -15,12 +15,13 @@ tokenizer_pl.from_pretrained('tokenizer/vocab.json')
 with open('data/training/corpus.jsonl', 'r') as f:
     training_data = [json.loads(line)['text'] for line in f]
 
+def encode_datasets():
 
-corpus_spm = [tokenizer_spm.Encode(text) for text in training_data]
-corpus_pl = [tokenizer_pl.encode(text) for text in training_data]
+    corpus_spm = [tokenizer_spm.Encode(text) for text in training_data]
+    corpus_pl = [tokenizer_pl.encode(text) for text in training_data]
 
-np.save('data/model_training/corpus_spm.npy', np.array(corpus_spm, dtype=object))
-np.save('data/model_training/corpus_pl.npy', np.array(corpus_pl, dtype=object))
+    np.save('data/model_training/corpus_spm.npy', np.array(corpus_spm, dtype=object))
+    np.save('data/model_training/corpus_pl.npy', np.array(corpus_pl, dtype=object))
 
-print(f"Tokenized {len(training_data)} samples")
-print(f"Saved to data/model_training/corpus_spm.npy and data/model_training/corpus_pl.npy")
+    print(f"Tokenized {len(training_data)} samples")
+    print(f"Saved to data/model_training/corpus_spm.npy and data/model_training/corpus_pl.npy")

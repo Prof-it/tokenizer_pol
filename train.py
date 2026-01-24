@@ -1,4 +1,5 @@
 import os
+import sentencepiece as spm
 import torch
 from torch.utils.data import DataLoader
 from huggingface_hub import snapshot_download
@@ -11,10 +12,12 @@ from config import ModelConfig, TrainingConfig
 from lightning_lm import LMTraining
 from utils import *
 from build_dataset import data_pipeline
+from tokenize_data import encode_datasets
 
+args = parse_args()
 
 def train():
-    args = parse_args()
+
 
     model_config = ModelConfig()
     training_config = TrainingConfig()
@@ -105,4 +108,37 @@ def train():
 
 if __name__ == "__main__":
     os.makedirs("data/model_training", exist_ok=True)
+
+    if args.start_fresh:
+        # download the data
+        data_pipeline()
+        # train spm tokenizer
+        spm.SentencePieceTrainer.train(
+            input='data/training/tokenizer_data.txt',
+            model_prefix='data/spm/baseline_tokenizer',
+            vocab_size=30_000,
+            model_type='bpe',
+            shuffle_input_sentence=True,
+            character_coverage=1.0,
+            split_by_whitespace=True,
+            pad_piece='<pad>',
+            unk_piece='<unk>',
+            bos_piece='<bos>',
+            eos_piece='<eos>',
+            pad_id=0,
+            unk_id=1,
+            bos_id=2,
+            eos_id=3,
+            user_defined_symbols=['<mask>']
+        )
+        # download PLTK
+        snapshot_download(
+            repo_id="rafal-adamczyk/polish-morphological-tokenizer",
+            local_dir="./tokenizer",
+            token=True
+        )
+        # encode datasets
+        encode_datasets()
+
+
     train()
