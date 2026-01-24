@@ -9,7 +9,7 @@ class ModelConfig:
     dropout = 0.1
     learning_rate = 3e-4
 
-class TrainingCongig:
+class TrainingConfig:
     batch_size = 64
     num_workers = 4
     max_epochs = 4
