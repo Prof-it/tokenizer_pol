@@ -1,3 +1,5 @@
 .idea/
+.venv/
 tokenizer/.cache/
+data/
 .env
