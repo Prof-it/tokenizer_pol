@@ -13,8 +13,7 @@ class LMTraining(L.LightningModule):
                  context_size,
                  d_ff,
                  dropout,
-                 learning_rate=3e-4
-                 ):
+                 learning_rate=3e-4):
         super().__init__()
 
         self.save_hyperparameters()
