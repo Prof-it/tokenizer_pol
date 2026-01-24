@@ -4,15 +4,19 @@ from torch.utils.data import DataLoader
 
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, RichProgressBar, LearningRateMonitor
+from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, LearningRateMonitor
 
+from config import ModelConfig, TrainingCongig
 from lightning_lm import LMTraining
 from utils import *
 
 
 def train():
     args = parse_args()
-    CONFIG = get_config(args.config)
+
+    model_config = ModelConfig()
+    training_config = TrainingCongig()
+
     torch.set_float32_matmul_precision('medium')
 
     # Setup dataset and dataloader
@@ -24,9 +28,9 @@ def train():
     # Training
     train_dataloader = DataLoader(
         train_data,
-        batch_size=args.batch_size,
+        batch_size=training_config.batch_size,
         shuffle=True,
-        num_workers=args.num_workers,
+        num_workers=training_config.num_workers,
         pin_memory=True,
         collate_fn=collate_fn
     )
@@ -34,23 +38,23 @@ def train():
     # Validation
     val_dataloader = DataLoader(
         val_data,
-        batch_size=args.batch_size,
+        batch_size=training_config.batch_size,
         shuffle=False,
-        num_workers=args.num_workers,
+        num_workers=training_config.num_workers,
         pin_memory=True,
         collate_fn=collate_fn
     )
 
     # Initialize model
     model = LMTraining(
-        vocab_size=CONFIG.vocab_size,
-        d_model=CONFIG.d_model,
-        num_heads=CONFIG.num_heads,
-        num_layers=CONFIG.num_layers,
-        context_size=CONFIG.context_size,
-        d_ff=CONFIG.d_ff,
-        dropout=0.1,
-        learning_rate=args.learning_rate
+        vocab_size=model_config.vocab_size,
+        d_model=model_config.d_model,
+        num_heads=model_config.num_heads,
+        num_layers=model_config.num_layers,
+        context_size=model_config.context_size,
+        d_ff=model_config.d_ff,
+        dropout=model_config.dropout,
+        learning_rate=model_config.learning_rate,
     )
 
     # Setup callbacks
@@ -64,7 +68,7 @@ def train():
     )
 
     # Setup logger
-    logger = WandbLogger(project=args.project_name)
+    logger = WandbLogger(project='polish-morph-bpe')
 
     # Setup trainer
     trainer = L.Trainer(
@@ -98,4 +102,8 @@ def train():
 
 
 if __name__ == "__main__":
+    # 1. download and process data
+    # 2. download pl tokenizer from hf
+    # 3. download and train spm
+    # 4. tokenize datasets?
     train()
