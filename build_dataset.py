@@ -228,5 +228,4 @@ def data_pipeline():
     process_raw_files()
     print('\nDone.')
 
-# TODO: Remove 'Bibliografia', 'Przypisy' from Wikipedia
 data_pipeline()
