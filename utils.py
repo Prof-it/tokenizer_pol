@@ -45,6 +45,7 @@ def parse_args():
 
     # Data mode
     parser.add_argument('--mode', type=str, choices=['spm', 'pl'], default='pl', help='Tokenizer mode: spm or pl')
+    parser.add_argument('--max_epochs', type=int, default=4, help='Maximum number of training epochs (default: 10)')
 
     # Checkpointing
     parser.add_argument('--resume_from', type=str, default=None, help='Path to checkpoint to resume from')
@@ -54,5 +55,7 @@ def parse_args():
     parser.add_argument('--devices', type=int, default=1, help='Number of GPUs to use (default: 1)')
     parser.add_argument('--precision', type=str, default='16-mixed', choices=['16-mixed', '32', 'bf16-mixed'], help='Training precision (default: 16-mixed)')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.data_path = DATA_PATHS[args.mode]
+    return args
 

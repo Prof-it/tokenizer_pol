@@ -12,7 +12,7 @@ from config import ModelConfig, TrainingConfig
 from lightning_lm import LMTraining
 from utils import *
 from build_dataset import data_pipeline
-from tokenize_data import encode_datasets
+# from tokenize_data import encode_datasets
 
 args = parse_args()
 
@@ -138,7 +138,7 @@ if __name__ == "__main__":
             token=True
         )
         # encode datasets
-        encode_datasets()
+        # encode_datasets()
 
 
     train()
