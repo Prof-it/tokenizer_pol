@@ -209,9 +209,9 @@ def process_raw_files():
             cleaned = ' '.join(text.split())
             f.write(cleaned + '\n')
 
-    # SAVE FULL CORPUS (JSONL - for LLM training)
-    corpus_path = os.path.join(training_dir, 'corpus.jsonl')
-    full_df.select('text').write_ndjson(corpus_path)
+    # SAVE FULL CORPUS (Parquet - for LLM training, much faster reads)
+    corpus_path = os.path.join(training_dir, 'corpus.parquet')
+    full_df.select('text').write_parquet(corpus_path)
 
 
     print(f'\nOutputs:')
@@ -220,7 +220,7 @@ def process_raw_files():
     print(f'     - Size: {os.path.getsize(tokenizer_path) / (1024**2):.2f} MB')
     print(f'  2. Full corpus: {corpus_path}')
     print(f'     - Rows: {len(full_df):,}')
-    print(f'     - Size: {os.path.getsize(corpus_path) / (1024**3):.2f} GB')
+    print(f'     - Size: {os.path.getsize(corpus_path) / (1024**2):.2f} MB')
 
 
 def data_pipeline():
