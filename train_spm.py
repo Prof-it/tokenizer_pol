@@ -1,10 +1,11 @@
 import sentencepiece as spm
+from config import ModelConfig
 
 # 1. train spm on the sama data
 spm.SentencePieceTrainer.train(
     input='data/training/tokenizer_data.txt',
     model_prefix='data/spm/baseline_tokenizer',
-    vocab_size=30_000,
+    vocab_size=ModelConfig.vocab_size,
     model_type='bpe',
     shuffle_input_sentence=True,
     character_coverage=1.0,
