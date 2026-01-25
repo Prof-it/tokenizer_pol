@@ -1,25 +1,24 @@
 import numpy as np
 import torch
 import argparse
-from torch.utils.data import Dataset
-from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import random_split
+from torch.utils.data import Dataset, random_split
 
 from config import ModelConfig
 
 
 class CorpusDataset(Dataset):
-    def __init__(self, path):
-        self.data = self._load_data(path=path)
+    def __init__(self, path, context_size=ModelConfig.context_size):
+        self.context_size = context_size
+        self.data = np.memmap(path, dtype=np.uint16, mode='r')
 
     def __getitem__(self, index):
-        return torch.tensor(self.data[index], dtype=torch.long)
+        start = index * self.context_size
+        end = start + self.context_size
+        return torch.tensor(self.data[start:end], dtype=torch.long)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) // self.context_size
 
-    def _load_data(self, path):
-        return np.load(path, allow_pickle=True)
 
 
 def train_test_split(dataset, train_size):
@@ -29,20 +28,12 @@ def train_test_split(dataset, train_size):
 
 
 def collate_fn(batch):
-    """
-    Custom collate function to handle variable-length sequences
-    Pads sequences to the same length within each batch
-    """
-    # Trimming the sequence length
-
-    batch = [seq[:ModelConfig().context_size] for seq in batch]
-
-    return pad_sequence(batch, batch_first=True, padding_value=0)
+    return torch.stack(batch)
 
 
 DATA_PATHS = {
-    'spm': 'data/model_training/corpus_spm.npy',
-    'pl': 'data/model_training/corpus_pl.npy',
+    'spm': 'data/model_training/corpus_spm.bin',
+    'pl': 'data/model_training/corpus_pl.bin',
 }
 
 
