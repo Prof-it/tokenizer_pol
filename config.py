@@ -1,6 +1,6 @@
 
 class ModelConfig:
-    vocab_size = 30_000
+    vocab_size = 30_004
     d_model = 768
     num_heads = 12
     num_layers = 12
