@@ -49,4 +49,4 @@ class MultiHeadAttention(nn.Module):
 
         # Final projection
         output = self.out_proj(context)
-        return self.dropout(output)
+        return output
