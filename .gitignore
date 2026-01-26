@@ -1,5 +1,13 @@
 .idea/
 .venv/
 tokenizer/
-data/
+wandb/
 .env
+*.bin
+*.txt
+*.jsonl
+*.model
+*.vocab
+*.parquet
+*.ckpt
+*.md
