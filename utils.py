@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import torch
 import argparse
 from torch.utils.data import Dataset, random_split
+import gdown
 
 from config import ModelConfig
 
@@ -35,6 +37,34 @@ DATA_PATHS = {
     'spm': 'data/model_training/corpus_spm.bin',
     'pl': 'data/model_training/corpus_pl.bin',
 }
+
+# Google Drive file IDs for pre-tokenized corpora
+GDRIVE_FILE_IDS = {
+    'pl': '1NH5cU2IlzFAsH2QAljsZDpeEGILLGvZg',
+    'spm': '1Ngap9Q5kZJOTiHmGDs7upmRCGS3KAB8q',
+}
+
+
+def download_corpus(mode: str, output_dir: str = 'data/model_training'):
+    """Download pre-tokenized corpus from Google Drive if not exists."""
+
+
+    output_path = DATA_PATHS[mode]
+
+    if os.path.exists(output_path):
+        print(f"Corpus already exists: {output_path}")
+        return output_path
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    file_id = GDRIVE_FILE_IDS[mode]
+    url = f'https://drive.google.com/uc?id={file_id}'
+
+    print(f"Downloading {mode} corpus from Google Drive...")
+    gdown.download(url, output_path, quiet=False)
+    print(f"Downloaded to: {output_path}")
+
+    return output_path
 
 
 def parse_args():
