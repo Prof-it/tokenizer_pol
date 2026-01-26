@@ -72,8 +72,37 @@ def train():
         save_last=True
     )
 
+    # Check for checkpoint resume
+    ckpt_path = None
+    wandb_run_id = None
+    wandb_id_file = os.path.join(args.checkpoint_dir, 'wandb_run_id.txt')
+
+    if args.resume_from:
+        ckpt_path = args.resume_from
+        print(f"Resuming from checkpoint: {ckpt_path}")
+        if os.path.exists(wandb_id_file):
+            with open(wandb_id_file, 'r') as f:
+                wandb_run_id = f.read().strip()
+            print(f"Resuming W&B run: {wandb_run_id}")
+    elif os.path.exists(os.path.join(args.checkpoint_dir, 'last.ckpt')):
+        ckpt_path = os.path.join(args.checkpoint_dir, 'last.ckpt')
+        print(f"Resuming from last checkpoint: {ckpt_path}")
+        if os.path.exists(wandb_id_file):
+            with open(wandb_id_file, 'r') as f:
+                wandb_run_id = f.read().strip()
+            print(f"Resuming W&B run: {wandb_run_id}")
+
     # Setup logger
-    logger = WandbLogger(project='polish-morph-bpe')
+    logger = WandbLogger(
+        project='polish-morph-bpe',
+        id=wandb_run_id,
+        resume='must' if wandb_run_id else None
+    )
+
+    # Save run ID for future resume
+    if not wandb_run_id:
+        with open(wandb_id_file, 'w') as f:
+            f.write(logger.experiment.id)
 
     # Setup trainer
     trainer = L.Trainer(
@@ -92,15 +121,6 @@ def train():
         ],
         enable_checkpointing=True,
     )
-
-    # Resume from checkpoint
-    ckpt_path = None
-    if args.resume_from:
-        ckpt_path = args.resume_from
-        print(f"Resuming from checkpoint: {ckpt_path}")
-    elif os.path.exists(os.path.join(args.checkpoint_dir, 'last.ckpt')):
-        ckpt_path = os.path.join(args.checkpoint_dir, 'last.ckpt')
-        print(f"Resuming from last checkpoint: {ckpt_path}")
 
     # Start training
     trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader, ckpt_path=ckpt_path)
