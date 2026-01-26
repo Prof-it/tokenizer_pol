@@ -12,17 +12,16 @@ from config import ModelConfig, TrainingConfig
 from lightning_lm import LMTraining
 from utils import *
 from build_dataset import data_pipeline
-# from tokenize_data import encode_datasets
+
+
+
+
 
 args = parse_args()
 model_config = ModelConfig()
 training_config = TrainingConfig()
 
 def train():
-
-
-
-
     torch.set_float32_matmul_precision('medium')
 
     # Setup dataset and dataloader
