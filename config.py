@@ -10,6 +10,6 @@ class ModelConfig:
     learning_rate = 3e-4
 
 class TrainingConfig:
-    batch_size = 128
+    batch_size = 64
     num_workers = 4
     max_epochs = 4
