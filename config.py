@@ -7,7 +7,7 @@ class ModelConfig:
     context_size = 512
     d_ff = 4 * d_model
     dropout = 0.1
-    learning_rate = 3e-4
+    learning_rate = 1e-4
 
 class TrainingConfig:
     batch_size = 64
