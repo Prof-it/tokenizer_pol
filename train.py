@@ -108,6 +108,7 @@ def train():
 
 if __name__ == "__main__":
     os.makedirs("data/model_training", exist_ok=True)
+    os.makedirs(args.checkpoint_dir, exist_ok=True)
 
     if args.start_fresh:
         # download the data
