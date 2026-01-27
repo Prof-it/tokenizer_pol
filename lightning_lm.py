@@ -37,6 +37,7 @@ class LMTraining(L.LightningModule):
     def training_step(self, batch, batch_idx):
         # Up to the last token
         inputs = batch[:, :-1]
+
         # Shift to all but first token
         targets = batch[:, 1:]
 
@@ -87,12 +88,14 @@ class LMTraining(L.LightningModule):
             # estimated_stepping_batches gives remaining steps
             total_steps = self.trainer.estimated_stepping_batches + self.global_step
 
-            # Use self.global_step instead of scheduler's step for robustness
+            # Use self.global_step instead of scheduler's step (when resuming keeps the LR at the same level when finished)
             current_step = self.global_step
 
             if current_step < warmup_steps:
                 return current_step / warmup_steps
+
             progress = (current_step - warmup_steps) / max(1, total_steps - warmup_steps)
+
             return 0.5 * (1 + math.cos(math.pi * progress))
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
