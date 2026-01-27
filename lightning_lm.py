@@ -79,16 +79,20 @@ class LMTraining(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
-        # Linear warmup + cosine decay
         warmup_steps = 1000
-        # estimated_stepping_batches only returns REMAINING steps when resuming
-        # Add global_step to get the true total for the full training run
-        total_steps = self.trainer.estimated_stepping_batches + self.global_step
 
         def lr_lambda(step):
-            if step < warmup_steps:
-                return step / warmup_steps
-            progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+            # Compute total_steps at runtime to handle resume correctly
+            # After checkpoint load, self.global_step reflects true progress
+            # estimated_stepping_batches gives remaining steps
+            total_steps = self.trainer.estimated_stepping_batches + self.global_step
+
+            # Use self.global_step instead of scheduler's step for robustness
+            current_step = self.global_step
+
+            if current_step < warmup_steps:
+                return current_step / warmup_steps
+            progress = (current_step - warmup_steps) / max(1, total_steps - warmup_steps)
             return 0.5 * (1 + math.cos(math.pi * progress))
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
