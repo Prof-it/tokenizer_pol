@@ -111,6 +111,7 @@ def train():
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=args.devices,
         strategy='ddp' if args.devices > 1 else "auto",
+        accumulate_grad_batches=2,
         precision=args.precision,
         gradient_clip_val=1.0,
         callbacks=[
