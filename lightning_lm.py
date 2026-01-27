@@ -81,7 +81,9 @@ class LMTraining(L.LightningModule):
 
         # Linear warmup + cosine decay
         warmup_steps = 1000
-        total_steps = self.trainer.estimated_stepping_batches
+        # estimated_stepping_batches only returns REMAINING steps when resuming
+        # Add global_step to get the true total for the full training run
+        total_steps = self.trainer.estimated_stepping_batches + self.global_step
 
         def lr_lambda(step):
             if step < warmup_steps:
