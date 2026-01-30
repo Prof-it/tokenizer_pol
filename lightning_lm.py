@@ -83,12 +83,11 @@ class LMTraining(L.LightningModule):
         warmup_steps = 1000
 
         def lr_lambda(step):
-            # Compute total_steps at runtime to handle resume correctly
-            # After checkpoint load, self.global_step reflects true progress
-            # estimated_stepping_batches gives remaining steps
-            total_steps = self.trainer.estimated_stepping_batches + self.global_step
+            # estimated_stepping_batches returns TOTAL steps for entire training (not remaining)
+            # This works for both fresh and resumed training since global_step tracks true progress
+            total_steps = self.trainer.estimated_stepping_batches
 
-            # Use self.global_step instead of scheduler's step (when resuming keeps the LR at the same level when finished)
+            # Use self.global_step instead of scheduler's step for correct resume behavior
             current_step = self.global_step
 
             if current_step < warmup_steps:
