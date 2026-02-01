@@ -79,7 +79,7 @@ def parse_args():
 
     # Checkpointing
     parser.add_argument('--resume_from', type=str, default=None, help='Path to checkpoint to resume from')
-    parser.add_argument('--checkpoint_dir', type=str, default='training/models/checkpoints/', help='Directory to save checkpoints')
+    parser.add_argument('--checkpoint_dir', type=str, default='models/checkpoints/', help='Directory to save checkpoints')
 
     # Hardware
     parser.add_argument('--devices', type=int, default=1, help='Number of GPUs to use (default: 1)')
