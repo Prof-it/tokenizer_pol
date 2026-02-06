@@ -13,3 +13,14 @@ class TrainingConfig:
     batch_size = 64
     num_workers = 4
     max_epochs = 4
+
+class LoRAConfig:
+    rank = 8
+    alpha = 16
+    learning_rate = 1e-4
+
+
+class LoRATrainingsConfig:
+    batch_size = 16
+    max_epochs = 10
+    mode = 'pl'
