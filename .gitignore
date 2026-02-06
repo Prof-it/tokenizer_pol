@@ -12,3 +12,5 @@ wandb/
 *.ckpt
 *.md
 *.tsv
+*.yaml
+events.out.tfevents.*
