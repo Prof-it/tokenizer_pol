@@ -52,11 +52,6 @@ class TransformerBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        """
-        Pass through the multihead attention and later through feed forward network with layer normalization
-        :param x:
-        :return:
-        """
         # Pass through multihead attention
         attn_out = self.mha(x)
 
@@ -77,9 +72,6 @@ class TransformerBlock(nn.Module):
         return x
 
 class LanguageModel(nn.Module):
-    """
-    Language model which will test the thesis
-    """
     def __init__(self,
                  vocab_size,
                  d_model,
@@ -124,6 +116,7 @@ class LanguageModel(nn.Module):
         :param x: Input tokens (batch, seq_len)
         :return: Output predictions (batch, seq_len, vocab_size)
         """
+
         # Scaling embeddings to prevent them from being too small relative to positional encodings
         x = self.embedding(x) * math.sqrt(self.d_model)
         x = self.positional_encoding(x)
@@ -132,6 +125,7 @@ class LanguageModel(nn.Module):
             x = layer(x)
 
         x = self.layer_norm(x)
+
         x = self.output(x)
         return x
 
@@ -153,15 +147,13 @@ class LanguageModel(nn.Module):
 
         with torch.no_grad():
             for _ in range(max_length):
-                # Use only last context_size tokens if too long
                 input_tokens = tokens[:, -self.context_size:]
                 logits = self(input_tokens)
 
-                # Logits for last position FIRST
+                # last position logits
                 logits = logits[:, -1, :] / temperature
 
-                # Apply repetition penalty
-                # Reduce probability of recently used tokens
+                # repetition penalty
                 if repetition_penalty != 1.0:
                     for token_id in set(tokens[0].tolist()):  # Unique tokens in sequence
                         logits[0, token_id] /= repetition_penalty
