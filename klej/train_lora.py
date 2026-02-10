@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import gdown
 import torch
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, LearningRateMonitor
@@ -18,6 +19,28 @@ from klej.classifier import KLEJClassifier
 config = ModelConfig()
 lora_config = LoRAConfig()
 lora_training = LoRATrainingsConfig()
+
+
+CHECKPOINT_GDRIVE_IDS = {
+    'pl':  '1sY8LhHyPKE2m2FzOcjHP466bbLgNyX8W',
+    'spm': '1wahTrHkbuW4u424Z8rTMEOu_KWcs6Kys',
+}
+
+
+def ensure_checkpoint(mode: str, project_root: Path) -> str:
+    """Download pretrained checkpoint from Google Drive if not present."""
+    folder = 'PL' if mode == 'pl' else 'SPM'
+    checkpoint_path = project_root / 'models' / folder / 'last.ckpt'
+
+    if not checkpoint_path.exists():
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        file_id = CHECKPOINT_GDRIVE_IDS[mode]
+        url = f'https://drive.google.com/uc?id={file_id}'
+        print(f"Downloading {mode} checkpoint from Google Drive...")
+        gdown.download(url, str(checkpoint_path), quiet=False)
+        print(f"Checkpoint saved to {checkpoint_path}")
+
+    return str(checkpoint_path)
 
 
 def load_tokenizer(mode: str):
@@ -48,10 +71,7 @@ def train_task(task_name:str, mode:str):
 
     project_root = Path(__file__).parent.parent
 
-    if mode == 'pl':
-        checkpoint_path = str(project_root / 'models' / 'PL' / 'last.ckpt')
-    else:
-        checkpoint_path = str(project_root / 'models' / 'SPM' / 'last.ckpt')
+    checkpoint_path = ensure_checkpoint(mode, project_root)
 
     output_dir = str(project_root / 'models' / 'klej')
 
