@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -62,8 +63,9 @@ def train_task(task_name:str, mode:str):
         datasets['train'],
         batch_size=lora_training.batch_size,
         shuffle=True,
-        num_workers=2,
+        num_workers=4,
         persistent_workers=True,
+        pin_memory=True,
     )
 
     val_loader = None
@@ -72,8 +74,9 @@ def train_task(task_name:str, mode:str):
             datasets['dev'],
             batch_size=lora_training.batch_size,
             shuffle=False,
-            num_workers=2,
+            num_workers=4,
             persistent_workers=True,
+            pin_memory=True,
         )
 
     model = KLEJClassifier(
@@ -106,27 +109,11 @@ def train_task(task_name:str, mode:str):
         save_last=True,
     )
 
-    # Check for wandb run resume
-    # wandb_run_id = None
-    # wandb_id_file = os.path.join(task_output_dir, 'wandb_run_id.txt')
-    #
-    # if os.path.exists(wandb_id_file):
-    #     with open(wandb_id_file, 'r') as f:
-    #         wandb_run_id = f.read().strip()
-    #     print(f"Resuming W&B run: {wandb_run_id}")
-
     logger = WandbLogger(
         project='polish-morph-bpe',
         name=f'klej-{task_name}-{mode}',
         tags=['lora-finetune', f'task:{task_name}', f'tokenizer:{mode}', f'rank:{lora_config.rank}'],
-        # id=wandb_run_id,
-        # resume='must' if wandb_run_id else None,
     )
-
-    # Save run ID for future resume
-    # if not wandb_run_id:
-    #     with open(wandb_id_file, 'w') as f:
-    #         f.write(logger.experiment.id)
 
     # Log hyperparameters
     logger.experiment.config.update({
@@ -167,7 +154,20 @@ def train_task(task_name:str, mode:str):
     return checkpoint_callback.best_model_path
 
 
+def ensure_klej_data():
+    klej_dir = Path(__file__).parent.parent / 'data' / 'klej' / 'KLEJ'
+    if not klej_dir.exists() or not any(klej_dir.iterdir()):
+        print("KLEJ data not found, downloading...")
+        subprocess.run(
+            [sys.executable, str(Path(__file__).parent / 'download_klej.py')],
+            cwd=str(Path(__file__).parent),
+            check=True,
+        )
+
+
 def main():
+
+    ensure_klej_data()
 
     results = {}
 
