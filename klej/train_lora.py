@@ -27,6 +27,18 @@ CHECKPOINT_GDRIVE_IDS = {
 }
 
 
+def ensure_pl_tokenizer():
+    from huggingface_hub import snapshot_download
+    tokenizer_dir = Path(__file__).parent.parent / 'tokenizer'
+    if not tokenizer_dir.exists() or not any(tokenizer_dir.iterdir()):
+        print("Polish tokenizer not found, downloading from HuggingFace...")
+        snapshot_download(
+            repo_id="rafal-adamczyk/polish-morphological-tokenizer",
+            local_dir=str(tokenizer_dir),
+            token=True,
+        )
+
+
 def ensure_checkpoint(mode: str, project_root: Path) -> str:
     """Download pretrained checkpoint from Google Drive if not present."""
     folder = 'PL' if mode == 'pl' else 'SPM'
@@ -188,6 +200,9 @@ def ensure_klej_data():
 def main():
 
     ensure_klej_data()
+
+    if lora_training.mode == 'pl':
+        ensure_pl_tokenizer()
 
     results = {}
 
