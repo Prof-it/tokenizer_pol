@@ -39,17 +39,35 @@ def ensure_pl_tokenizer():
         )
 
 
+def _is_valid_checkpoint(path: Path) -> bool:
+    import zipfile
+    try:
+        return zipfile.is_zipfile(str(path))
+    except Exception:
+        return False
+
+
 def ensure_checkpoint(mode: str, project_root: Path) -> str:
-    """Download pretrained checkpoint from Google Drive if not present."""
+    """Download pretrained checkpoint from Google Drive if not present or corrupted."""
     folder = 'PL' if mode == 'pl' else 'SPM'
     checkpoint_path = project_root / 'models' / folder / 'last.ckpt'
 
-    if not checkpoint_path.exists() or checkpoint_path.stat().st_size < 1_000_000:
+    if checkpoint_path.exists() and not _is_valid_checkpoint(checkpoint_path):
+        print(f"Corrupt checkpoint detected at {checkpoint_path}, removing...")
+        checkpoint_path.unlink()
+
+    if not checkpoint_path.exists():
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         file_id = CHECKPOINT_GDRIVE_IDS[mode]
-        url = f'https://drive.google.com/uc?id={file_id}'
         print(f"Downloading {mode} checkpoint from Google Drive...")
-        gdown.download(url, str(checkpoint_path), quiet=False, fuzzy=True)
+        gdown.download(id=file_id, output=str(checkpoint_path), quiet=False, resume=True)
+
+        if not _is_valid_checkpoint(checkpoint_path):
+            checkpoint_path.unlink()
+            raise RuntimeError(
+                f"Downloaded checkpoint for '{mode}' is not a valid PyTorch file. "
+                "The Google Drive link may require additional permissions or the upload may be incomplete."
+            )
         print(f"Checkpoint saved to {checkpoint_path}")
 
     return str(checkpoint_path)
