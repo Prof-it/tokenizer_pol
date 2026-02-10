@@ -14,9 +14,6 @@ from utils import *
 from build_dataset import data_pipeline
 
 
-
-
-
 args = parse_args()
 model_config = ModelConfig()
 training_config = TrainingConfig()
