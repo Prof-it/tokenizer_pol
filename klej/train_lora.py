@@ -174,7 +174,7 @@ def train_task(task_name:str, mode:str):
         'batch_size': lora_training.batch_size,
         'max_length': config.context_size,
         'max_epochs': lora_training.max_epochs,
-    })
+    }, allow_val_change=True)
 
     # Trainer
     trainer = L.Trainer(
