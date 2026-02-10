@@ -19,8 +19,7 @@ class LoRAConfig:
     alpha = 16
     learning_rate = 1e-4
 
-
 class LoRATrainingsConfig:
     batch_size = 16
-    max_epochs = 10
+    max_epochs = 5
     mode = 'pl'
