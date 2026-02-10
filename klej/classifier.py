@@ -195,12 +195,19 @@ class KLEJClassifier(L.LightningModule):
             weight_decay=0.01,
         )
 
-        # Linear warmup + cosine decay
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer,
-            T_max=self.trainer.estimated_stepping_batches,
-            eta_min=self.learning_rate * 0.1,
-        )
+        # Warmup + cosine annealing using LambdaLR (avoids step ordering issues)
+        total_steps = self.trainer.estimated_stepping_batches
+        warmup_steps = int(0.1 * total_steps)  # 10% warmup
+
+        def lr_lambda(current_step):
+            if current_step < warmup_steps:
+                # Linear warmup from 0 to 1
+                return current_step / max(1, warmup_steps)
+            # Cosine decay from 1 to 0.1
+            progress = (current_step - warmup_steps) / max(1, total_steps - warmup_steps)
+            return 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress))
+
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
         return {
             'optimizer': optimizer,
