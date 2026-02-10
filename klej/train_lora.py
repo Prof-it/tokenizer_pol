@@ -44,12 +44,12 @@ def ensure_checkpoint(mode: str, project_root: Path) -> str:
     folder = 'PL' if mode == 'pl' else 'SPM'
     checkpoint_path = project_root / 'models' / folder / 'last.ckpt'
 
-    if not checkpoint_path.exists():
+    if not checkpoint_path.exists() or checkpoint_path.stat().st_size < 1_000_000:
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         file_id = CHECKPOINT_GDRIVE_IDS[mode]
         url = f'https://drive.google.com/uc?id={file_id}'
         print(f"Downloading {mode} checkpoint from Google Drive...")
-        gdown.download(url, str(checkpoint_path), quiet=False)
+        gdown.download(url, str(checkpoint_path), quiet=False, fuzzy=True)
         print(f"Checkpoint saved to {checkpoint_path}")
 
     return str(checkpoint_path)
