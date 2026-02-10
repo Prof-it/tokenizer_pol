@@ -1,20 +1,18 @@
 import os
 import sys
-
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
 import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
+from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, LearningRateMonitor
 from lightning.pytorch.loggers import WandbLogger
 from torch.utils.data import DataLoader
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import ModelConfig, LoRAConfig, LoRATrainingsConfig
 from klej.tasks import TASKS
 from klej.dataset import TokenizerWrapper, load_klej_datasets
 from klej.classifier import KLEJClassifier
-
 
 config = ModelConfig()
 lora_config = LoRAConfig()
@@ -40,13 +38,8 @@ def load_tokenizer(mode: str):
 
 
 def train_task(task_name:str, mode:str):
-    """
-    Fine-tune model on a KLEJ task.
 
-    Args:
-        task_name: Name of KLEJ task (e.g., 'nkjp-ner', 'cdsc-e')
-        mode: Tokenizer mode ('pl' or 'spm')
-    """
+    torch.set_float32_matmul_precision('medium')
 
     print(f"\n{'='*60}")
     print(f"Training {task_name} with {mode} tokenizer")
@@ -69,8 +62,8 @@ def train_task(task_name:str, mode:str):
         datasets['train'],
         batch_size=lora_training.batch_size,
         shuffle=True,
-        num_workers=4,
-        pin_memory=True,
+        num_workers=2,
+        persistent_workers=True,
     )
 
     val_loader = None
@@ -79,8 +72,8 @@ def train_task(task_name:str, mode:str):
             datasets['dev'],
             batch_size=lora_training.batch_size,
             shuffle=False,
-            num_workers=4,
-            pin_memory=True,
+            num_workers=2,
+            persistent_workers=True,
         )
 
     model = KLEJClassifier(
@@ -103,50 +96,37 @@ def train_task(task_name:str, mode:str):
     task_output_dir = os.path.join(output_dir, mode, task_name)
     os.makedirs(task_output_dir, exist_ok=True)
 
-    # Callbacks
-    callbacks = [
-        ModelCheckpoint(
-            dirpath=task_output_dir,
-            filename='best-{epoch:02d}-{val_loss:.3f}',
-            monitor='val_loss' if val_loader else 'train_loss',
-            mode='min',
-            save_top_k=1,
-        ),
-    ]
-
-    if val_loader:
-        callbacks.append(
-            EarlyStopping(
-                monitor='val_loss',
-                patience=3,
-                mode='min',
-            )
-        )
-
-    # Add LR monitor
-    callbacks.append(LearningRateMonitor(logging_interval='step'))
+    # Setup checkpoint callback
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=task_output_dir,
+        filename='best-{epoch:02d}-{val_loss:.3f}' if val_loader else 'best-{epoch:02d}-{train_loss:.3f}',
+        monitor='val_loss' if val_loader else 'train_loss',
+        mode='min',
+        save_top_k=1,
+        save_last=True,
+    )
 
     # Check for wandb run resume
-    wandb_run_id = None
-    wandb_id_file = os.path.join(task_output_dir, 'wandb_run_id.txt')
-
-    if os.path.exists(wandb_id_file):
-        with open(wandb_id_file, 'r') as f:
-            wandb_run_id = f.read().strip()
-        print(f"Resuming W&B run: {wandb_run_id}")
+    # wandb_run_id = None
+    # wandb_id_file = os.path.join(task_output_dir, 'wandb_run_id.txt')
+    #
+    # if os.path.exists(wandb_id_file):
+    #     with open(wandb_id_file, 'r') as f:
+    #         wandb_run_id = f.read().strip()
+    #     print(f"Resuming W&B run: {wandb_run_id}")
 
     logger = WandbLogger(
         project='polish-morph-bpe',
         name=f'klej-{task_name}-{mode}',
         tags=['lora-finetune', f'task:{task_name}', f'tokenizer:{mode}', f'rank:{lora_config.rank}'],
-        id=wandb_run_id,
-        resume='must' if wandb_run_id else None,
+        # id=wandb_run_id,
+        # resume='must' if wandb_run_id else None,
     )
 
     # Save run ID for future resume
-    if not wandb_run_id:
-        with open(wandb_id_file, 'w') as f:
-            f.write(logger.experiment.id)
+    # if not wandb_run_id:
+    #     with open(wandb_id_file, 'w') as f:
+    #         f.write(logger.experiment.id)
 
     # Log hyperparameters
     logger.experiment.config.update({
@@ -165,10 +145,13 @@ def train_task(task_name:str, mode:str):
         accelerator='auto',
         devices=1,
         precision='16-mixed',
-        callbacks=callbacks,
+        callbacks=[
+            checkpoint_callback,
+            RichModelSummary(max_depth=2),
+            LearningRateMonitor(logging_interval='step')
+        ],
         logger=logger,
         gradient_clip_val=1.0,
-        enable_progress_bar=True,
     )
 
     # Train
@@ -181,7 +164,7 @@ def train_task(task_name:str, mode:str):
     print(f"\nTraining complete! Model saved to {task_output_dir}")
 
     # Return best model path for evaluation
-    return callbacks[0].best_model_path
+    return checkpoint_callback.best_model_path
 
 
 def main():
