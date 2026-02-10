@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import gdown
+import wandb
 import torch
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, LearningRateMonitor
@@ -197,6 +198,8 @@ def train_task(task_name:str, mode:str):
         train_dataloaders=train_loader,
         val_dataloaders=val_loader,
     )
+
+    wandb.finish()
 
     print(f"\nTraining complete! Model saved to {task_output_dir}")
 
