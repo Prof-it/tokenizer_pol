@@ -22,4 +22,4 @@ class LoRAConfig:
 class LoRATrainingsConfig:
     batch_size = 16
     max_epochs = 5
-    mode = 'pl'
+    mode = 'spm'
