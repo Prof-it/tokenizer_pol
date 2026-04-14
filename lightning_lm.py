@@ -85,9 +85,11 @@ class LMTraining(L.LightningModule):
 
         def lr_lambda(step):
             if step < warmup_steps:
-                return step / warmup_steps
+                # Start at 1% of peak LR, ramp to 100% over warmup_steps
+                return 0.01 + 0.99 * (step / warmup_steps)
             progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
-            return 0.5 * (1 + math.cos(math.pi * progress))
+            # Cosine decay from 100% to 10% of peak LR
+            return 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress))
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
