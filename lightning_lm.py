@@ -5,16 +5,19 @@ import lightning as L
 
 from language_model import LanguageModel
 
+
 class LMTraining(L.LightningModule):
-    def __init__(self,
-                 vocab_size,
-                 d_model,
-                 num_heads,
-                 num_layers,
-                 context_size,
-                 d_ff,
-                 dropout,
-                 learning_rate=3e-4):
+    def __init__(
+        self,
+        vocab_size,
+        d_model,
+        num_heads,
+        num_layers,
+        context_size,
+        d_ff,
+        dropout,
+        learning_rate,
+    ):
         super().__init__()
 
         self.save_hyperparameters()
@@ -47,13 +50,18 @@ class LMTraining(L.LightningModule):
         loss = F.cross_entropy(
             input=logits.reshape(-1, logits.size(-1)),  # [batch*seq, vocab_size]
             target=targets.reshape(-1),  # [batch*seq]
-            ignore_index = 0 # ignore padding
+            ignore_index=0,  # ignore padding
         )
 
         perplexity = torch.exp(loss)
 
-        self.log('train_loss', loss, prog_bar=True)
-        self.log('train_perplexity', perplexity, prog_bar=True)
+        self.log("train_loss", loss, prog_bar=True)
+        self.log("train_perplexity", perplexity, prog_bar=True)
+
+        # Log actual LR for debugging
+        if self.trainer.optimizers:
+            current_lr = self.trainer.optimizers[0].param_groups[0]["lr"]
+            self.log("actual_lr", current_lr, prog_bar=False)
 
         return loss
 
@@ -67,13 +75,13 @@ class LMTraining(L.LightningModule):
             loss = F.cross_entropy(
                 input=logits.reshape(-1, logits.size(-1)),
                 target=targets.reshape(-1),
-                ignore_index=0
+                ignore_index=0,
             )
 
             perplexity = torch.exp(loss)
 
-            self.log('val_loss', loss, prog_bar=True)
-            self.log('val_perplexity', perplexity, prog_bar=True)
+            self.log("val_loss", loss, prog_bar=True)
+            self.log("val_perplexity", perplexity, prog_bar=True)
 
             return loss
 
@@ -85,10 +93,8 @@ class LMTraining(L.LightningModule):
 
         def lr_lambda(step):
             if step < warmup_steps:
-                # Start at 1% of peak LR, ramp to 100% over warmup_steps
                 return 0.01 + 0.99 * (step / warmup_steps)
             progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
-            # Cosine decay from 100% to 10% of peak LR
             return 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress))
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
@@ -98,6 +104,6 @@ class LMTraining(L.LightningModule):
             "lr_scheduler": {
                 "scheduler": scheduler,
                 "interval": "step",
-                "frequency": 1
-            }
+                "frequency": 1,
+            },
         }
