@@ -64,7 +64,20 @@ class LMTraining(L.LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         self.log("train_perplexity", perplexity, prog_bar=True)
 
+        if self.trainer.optimizers:
+            current_lr = self.trainer.optimizers[0].param_groups[0]['lr']
+            self.log('lr', current_lr, prog_bar=True)
+
         return loss
+
+    def on_before_optimizer_step(self, optimizer):
+        # Log total gradient norm — if this goes to 0 the model has stopped learning
+        total_norm = 0.0
+        for p in self.parameters():
+            if p.grad is not None:
+                total_norm += p.grad.detach().float().norm(2).item() ** 2
+        total_norm = total_norm ** 0.5
+        self.log('grad_norm', total_norm, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
