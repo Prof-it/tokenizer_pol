@@ -1,7 +1,13 @@
 import math
+import random
+import numpy as np
 import torch
 import torch.nn.functional as F
 import lightning as L
+
+torch.manual_seed(42)
+random.seed(42)
+np.random.seed(42)
 
 from language_model import LanguageModel
 
@@ -58,11 +64,6 @@ class LMTraining(L.LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         self.log("train_perplexity", perplexity, prog_bar=True)
 
-        # Log actual LR for debugging
-        if self.trainer.optimizers:
-            current_lr = self.trainer.optimizers[0].param_groups[0]["lr"]
-            self.log("actual_lr", current_lr, prog_bar=False)
-
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -86,17 +87,14 @@ class LMTraining(L.LightningModule):
             return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-
-        warmup_steps = 1000
-        total_steps = self.trainer.estimated_stepping_batches
+        high_lr = 1e-3
+        optimizer = torch.optim.AdamW(self.parameters(), lr=high_lr)
 
         def lr_lambda(step):
-            if step < warmup_steps:
-                return 0.01 + 0.99 * (step / warmup_steps)
-            progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
-            return 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress))
+            return 1.0
 
+
+        # adding higher lr here to verify if it will converge
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
         return {

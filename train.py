@@ -1,4 +1,6 @@
 import os
+import random
+import numpy as np
 import sentencepiece as spm
 import torch
 from torch.utils.data import DataLoader
@@ -6,7 +8,11 @@ from huggingface_hub import snapshot_download
 
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, LearningRateMonitor
+from lightning.pytorch.callbacks import (
+    ModelCheckpoint,
+    RichModelSummary,
+    LearningRateMonitor,
+)
 
 from config import ModelConfig, TrainingConfig
 from lightning_lm import LMTraining
@@ -18,8 +24,14 @@ args = parse_args()
 model_config = ModelConfig()
 training_config = TrainingConfig()
 
+
 def train():
-    torch.set_float32_matmul_precision('medium')
+    torch.manual_seed(42)
+    random.seed(42)
+    np.random.seed(42)
+    torch.cuda.manual_seed_all(42)
+
+    torch.set_float32_matmul_precision("medium")
 
     # Setup dataset and dataloader
     dataset = CorpusDataset(args.data_path)
@@ -34,7 +46,7 @@ def train():
         shuffle=True,
         num_workers=training_config.num_workers,
         pin_memory=True,
-        collate_fn=collate_fn
+        collate_fn=collate_fn,
     )
 
     # Validation
@@ -44,7 +56,7 @@ def train():
         shuffle=False,
         num_workers=training_config.num_workers,
         pin_memory=True,
-        collate_fn=collate_fn
+        collate_fn=collate_fn,
     )
 
     # Initialize model
@@ -62,43 +74,43 @@ def train():
     # Setup callbacks
     checkpoint_callback = ModelCheckpoint(
         dirpath=args.checkpoint_dir,
-        filename='model-{epoch:02d}-{train_loss:.2f}',
+        filename="model-{epoch:02d}-{train_loss:.2f}",
         save_top_k=3,
-        monitor='train_loss',
-        mode='min',
-        save_last=True
+        monitor="train_loss",
+        mode="min",
+        save_last=True,
     )
 
     # Check for checkpoint resume
     ckpt_path = None
     wandb_run_id = None
-    wandb_id_file = os.path.join(args.checkpoint_dir, 'wandb_run_id.txt')
+    wandb_id_file = os.path.join(args.checkpoint_dir, "wandb_run_id.txt")
 
     if args.resume_from:
         ckpt_path = args.resume_from
         print(f"Resuming from checkpoint: {ckpt_path}")
         if os.path.exists(wandb_id_file):
-            with open(wandb_id_file, 'r') as f:
+            with open(wandb_id_file, "r") as f:
                 wandb_run_id = f.read().strip()
             print(f"Resuming W&B run: {wandb_run_id}")
-    elif os.path.exists(os.path.join(args.checkpoint_dir, 'last.ckpt')):
-        ckpt_path = os.path.join(args.checkpoint_dir, 'last.ckpt')
+    elif os.path.exists(os.path.join(args.checkpoint_dir, "last.ckpt")):
+        ckpt_path = os.path.join(args.checkpoint_dir, "last.ckpt")
         print(f"Resuming from last checkpoint: {ckpt_path}")
         if os.path.exists(wandb_id_file):
-            with open(wandb_id_file, 'r') as f:
+            with open(wandb_id_file, "r") as f:
                 wandb_run_id = f.read().strip()
             print(f"Resuming W&B run: {wandb_run_id}")
 
     # Setup logger
     logger = WandbLogger(
-        project='polish-morph-bpe',
+        project="polish-morph-bpe",
         id=wandb_run_id,
-        resume='must' if wandb_run_id else None
+        resume="must" if wandb_run_id else None,
     )
 
     # Save run ID for future resume
     if not wandb_run_id:
-        with open(wandb_id_file, 'w') as f:
+        with open(wandb_id_file, "w") as f:
             f.write(logger.experiment.id)
 
     # Setup trainer
@@ -107,7 +119,7 @@ def train():
         logger=logger,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=args.devices,
-        strategy='ddp' if args.devices > 1 else "auto",
+        strategy="ddp" if args.devices > 1 else "auto",
         # accumulate_grad_batches=2,
         precision=args.precision,
         gradient_clip_val=1.0,
@@ -115,13 +127,18 @@ def train():
             checkpoint_callback,
             RichModelSummary(max_depth=2),
             # RichProgressBar(),
-            LearningRateMonitor(logging_interval='step')
+            LearningRateMonitor(logging_interval="step"),
         ],
         enable_checkpointing=True,
     )
 
     # Start training
-    trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader, ckpt_path=ckpt_path)
+    trainer.fit(
+        model,
+        train_dataloaders=train_dataloader,
+        val_dataloaders=val_dataloader,
+        ckpt_path=ckpt_path,
+    )
 
 
 if __name__ == "__main__":
@@ -136,31 +153,30 @@ if __name__ == "__main__":
         data_pipeline()
         # train spm tokenizer
         spm.SentencePieceTrainer.train(
-            input='data/training/tokenizer_data.txt',
-            model_prefix='data/spm/baseline_tokenizer',
+            input="data/training/tokenizer_data.txt",
+            model_prefix="data/spm/baseline_tokenizer",
             vocab_size=model_config.vocab_size,
-            model_type='bpe',
+            model_type="bpe",
             shuffle_input_sentence=True,
             character_coverage=1.0,
             split_by_whitespace=True,
-            pad_piece='<pad>',
-            unk_piece='<unk>',
-            bos_piece='<bos>',
-            eos_piece='<eos>',
+            pad_piece="<pad>",
+            unk_piece="<unk>",
+            bos_piece="<bos>",
+            eos_piece="<eos>",
             pad_id=0,
             unk_id=1,
             bos_id=2,
             eos_id=3,
-            user_defined_symbols=['<mask>']
+            user_defined_symbols=["<mask>"],
         )
         # download PLTK
         snapshot_download(
             repo_id="rafal-adamczyk/polish-morphological-tokenizer",
             local_dir="./tokenizer",
-            token=True
+            token=True,
         )
         # encode datasets
         # encode_datasets()
-
 
     train()

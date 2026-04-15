@@ -16,6 +16,7 @@ class MultiHeadAttention(nn.Module):
         self.qkv_proj = nn.Linear(d_model, 3 * d_model)
         self.out_proj = nn.Linear(d_model, d_model)
 
+
         # Register mask once
         self.register_buffer('mask', torch.triu(
             torch.ones(context_size, context_size, dtype=torch.bool),
@@ -30,6 +31,16 @@ class MultiHeadAttention(nn.Module):
         qkv = qkv.reshape(B, T, 3, self.num_heads, self.d_head)
         qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, B, num_heads, T, d_head)
         q, k, v = qkv[0], qkv[1], qkv[2]  # Each is (B, num_heads, T, d_head)
+
+
+        """
+        # TODO: Replace with Pytorch's scaled dot-product attention:
+        context = F.scaled_dot_product_attention(q, k, v, 
+                                                 attn_mask=self.mask[:T, :T],
+                                                 is_causal=True,
+                                                 dropout_p=self.dropout.p
+                                                 )
+        """
 
         # Scaled dot-product attention
         scores = (q @ k.transpose(-2, -1)) * (self.d_head ** -0.5)
