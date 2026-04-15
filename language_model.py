@@ -52,23 +52,9 @@ class TransformerBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        # Pass through multihead attention
-        attn_out = self.mha(x)
-
-        #  Add droput
-        x = x + self.dropout(attn_out)
-
-        # Normalize
-        x = self.layer_norm1(x)
-
-        # FFN with residual connection to prevent missing gradients
-        ffn_out = self.feed_forward_net(x)
-
-        x = x + self.dropout(ffn_out)
-
-        # Normalize
-        x = self.layer_norm2(x)
-
+        # Pre-LN: normalize before each sub-layer (GPT-2 style)
+        x = x + self.dropout(self.mha(self.layer_norm1(x)))
+        x = x + self.dropout(self.feed_forward_net(self.layer_norm2(x)))
         return x
 
 class LanguageModel(nn.Module):
