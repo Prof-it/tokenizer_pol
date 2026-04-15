@@ -87,14 +87,19 @@ class LMTraining(L.LightningModule):
             return loss
 
     def configure_optimizers(self):
-        high_lr = 1e-3
-        optimizer = torch.optim.AdamW(self.parameters(), lr=high_lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+
+        warmup_steps = 1000
+        total_steps = self.trainer.estimated_stepping_batches
 
         def lr_lambda(step):
-            return 1.0
+            if step < warmup_steps:
+                # Start at 1% of peak LR, ramp to 100% over warmup_steps
+                return 0.01 + 0.99 * (step / warmup_steps)
+            progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+            # Cosine decay from 100% to 10% of peak LR
+            return 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress))
 
-
-        # adding higher lr here to verify if it will converge
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
         return {
@@ -102,6 +107,6 @@ class LMTraining(L.LightningModule):
             "lr_scheduler": {
                 "scheduler": scheduler,
                 "interval": "step",
-                "frequency": 1,
-            },
+                "frequency": 1
+            }
         }
