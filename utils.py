@@ -41,7 +41,7 @@ DATA_PATHS = {
 # Google Drive file IDs for pre-tokenized corpora
 GDRIVE_FILE_IDS = {
     'pl': '1NH5cU2IlzFAsH2QAljsZDpeEGILLGvZg',
-    'spm': '1Ngap9Q5kZJOTiHmGDs7upmRCGS3KAB8q',
+    'spm': '1XBhgiEVBRhtXkeG3uKZdw7SmsXjMSve3',
 }
 
 
