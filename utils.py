@@ -79,7 +79,7 @@ def parse_args():
 
     # Checkpointing
     parser.add_argument('--resume_from', type=str, default=None, help='Path to checkpoint to resume from')
-    parser.add_argument('--checkpoint_dir', type=str, default='models/checkpoints/', help='Directory to save checkpoints')
+    parser.add_argument('--checkpoint_dir', type=str, default=None, help='Directory to save checkpoints (default: models/{mode}/)')
 
     # Hardware
     parser.add_argument('--devices', type=int, default=1, help='Number of GPUs to use (default: 1)')
@@ -87,5 +87,7 @@ def parse_args():
 
     args = parser.parse_args()
     args.data_path = DATA_PATHS[args.mode]
+    if args.checkpoint_dir is None:
+        args.checkpoint_dir = f'models/{args.mode.upper()}/'
     return args
 

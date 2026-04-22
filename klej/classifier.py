@@ -47,7 +47,6 @@ class KLEJClassifier(L.LightningModule):
         self.lora_rank = lora_rank
         self.lora_alpha = lora_alpha
         self.lora_dropout = lora_dropout
-        self._lora_applied = False
 
         # inherited base model
         self.model = LanguageModel(
@@ -58,6 +57,14 @@ class KLEJClassifier(L.LightningModule):
             context_size=context_size,
             d_ff=d_ff,
             dropout=dropout,
+        )
+
+        # Always apply LoRA so state_dict keys are consistent for checkpointing
+        self.model = apply_lora(
+            self.model,
+            rank=self.lora_rank,
+            alpha=self.lora_alpha,
+            dropout=self.lora_dropout,
         )
 
         # Classification head added on top of bsae LM
@@ -85,8 +92,18 @@ class KLEJClassifier(L.LightningModule):
         else:
             state_dict = checkpoint
 
-        # Load weights into base model
-        missing, unexpected = self.model.load_state_dict(state_dict, strict=False)
+        # LoRA is already applied in __init__, so remap flat keys (e.g. qkv_proj.weight)
+        # to their LoRA original_layer equivalents (qkv_proj.original_layer.weight)
+        remapped = {}
+        for k, v in state_dict.items():
+            for lora_target in ('qkv_proj', 'out_proj'):
+                if f'{lora_target}.weight' in k:
+                    k = k.replace(f'{lora_target}.weight', f'{lora_target}.original_layer.weight')
+                elif f'{lora_target}.bias' in k:
+                    k = k.replace(f'{lora_target}.bias', f'{lora_target}.original_layer.bias')
+            remapped[k] = v
+
+        missing, unexpected = self.model.load_state_dict(remapped, strict=False)
 
         print(f"Loaded pretrained weights from {checkpoint_path}")
         if missing:
@@ -94,19 +111,10 @@ class KLEJClassifier(L.LightningModule):
         if unexpected:
             print(f"Unexpected keys: {len(unexpected)}")
 
-        # Freeze all base model parameters
-        for param in self.model.parameters():
-            param.requires_grad = False
-
-        # add LORA
-        if not self._lora_applied:
-            self.model = apply_lora(
-                self.model,
-                rank=self.lora_rank,
-                alpha=self.lora_alpha,
-                dropout=self.lora_dropout,
-            )
-            self._lora_applied = True
+        # Freeze all base model parameters; LoRA params remain trainable
+        for name, param in self.model.named_parameters():
+            if 'lora_A' not in name and 'lora_B' not in name:
+                param.requires_grad = False
 
         # Print parameter counts
         param_counts = count_parameters(self.model)
