@@ -1,4 +1,4 @@
-Copyright (c) 2026 Prof-it and Julian Kramer
+Copyright (c) 2026 Prof-it and Rafał Adamczyk
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of these Materials (including but not limited to software, educational content, documentation, diagrams, images, curricula, and all associated files), to use, copy, modify, and distribute the Materials for NON-COMMERCIAL purposes, subject to the following conditions:
 
