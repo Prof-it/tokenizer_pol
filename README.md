@@ -133,6 +133,7 @@ See the full paper for complete methodology, additional qualitative results, and
 
 ---
 
+
 ## Citation
 
 If you use PLTK in your academic work, please cite:
@@ -141,17 +142,22 @@ If you use PLTK in your academic work, please cite:
 @inproceedings{adamczykPltkMorphology2026,
   title={PLTK: Morphology-Aware BPE Tokenization for Polish Language Models},
   author={Rafał Adamczyk and Tianxiang Lu and Maja Popovic},
-  booktitle={Proceedings of ACL 2026},
+  booktitle={Proceedings of KONVENS 2026},
   year={2026},
-  note={Presented at KONVENS 2026, Uni-Hamburg.},
-  url={https://github.com/Prof-it/tokenizer_pol}
+  address={Hamburg, Germany},
+  publisher={Association for Computational Linguistics},
+  url={https://aclanthology.org/venues/konvens/},
+  note={Published in the proceedings of KONVENS 2026, to appear in the ACL Anthology}
 }
 ```
+
+> **Note:** The proceedings will be open access and available after the conference at the [ACL Anthology: KONVENS venue](https://aclanthology.org/venues/konvens/).
 
 ---
 
 ## License
 
+This project is open-sourced under the MIT License.  
 See the `LICENSE` file for details.
 
 ---
